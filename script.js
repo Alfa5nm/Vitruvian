@@ -1,18 +1,18 @@
-const layers = document.querySelectorAll('.parallax-layer');
-const hero = document.querySelector('.hero');
+const heroScene = document.querySelector('.scene--hero');
+const storyScene = document.querySelector('.scene--story');
 const exploreButton = document.querySelector('.explore');
-const meteorContainer = document.querySelector('.meteors');
+const replayButton = document.querySelector('.story-replay');
+const blinkOverlay = document.querySelector('.blink-overlay');
+const heroMeteorContainer = heroScene ? heroScene.querySelector('.meteors') : null;
 const title = document.querySelector('.title');
+const storyLines = storyScene ? storyScene.querySelectorAll('.story-line') : [];
 
 const supportsMatchMedia = typeof window.matchMedia === 'function';
-const reduceMotionQuery = supportsMatchMedia
-  ? window.matchMedia('(prefers-reduced-motion: reduce)')
-  : { matches: false };
-const finePointerQuery = supportsMatchMedia
-  ? window.matchMedia('(pointer: fine)')
-  : { matches: true };
+const reduceMotionQuery = supportsMatchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+const finePointerQuery = supportsMatchMedia ? window.matchMedia('(pointer: fine)') : { matches: true };
 
 function subscribeToQuery(query, callback) {
+  if (!query) return;
   if (typeof query.addEventListener === 'function') {
     query.addEventListener('change', callback);
   } else if (typeof query.addListener === 'function') {
@@ -20,54 +20,130 @@ function subscribeToQuery(query, callback) {
   }
 }
 
-function handleParallax(event) {
-  const rect = hero.getBoundingClientRect();
-  const offsetX = event.clientX - rect.left;
-  const offsetY = event.clientY - rect.top;
-  const normalizedX = (offsetX / rect.width - 0.5) * 2;
-  const normalizedY = (offsetY / rect.height - 0.5) * 2;
+let motionEnabled = !(reduceMotionQuery.matches || !finePointerQuery.matches);
 
-  layers.forEach((layer, index) => {
-    const depth = (index + 1) / layers.length;
-    const translateX = normalizedX * -12 * depth;
-    const translateY = normalizedY * -12 * depth;
-    layer.style.transform = `translate3d(${translateX}px, ${translateY}px, 0)`;
-  });
-}
+function createParallaxContext(root, { strength = 16, active = true } = {}) {
+  if (!root) return null;
+  const layers = root.querySelectorAll('[data-depth]');
+  if (!layers.length) return null;
 
-function resetParallax() {
-  layers.forEach((layer) => {
-    layer.style.transform = 'translate3d(0, 0, 0)';
-  });
-}
+  let frame = null;
+  let targetX = 0;
+  let targetY = 0;
+  let currentX = 0;
+  let currentY = 0;
+  let isEnabled = false;
+  let isActive = Boolean(active);
 
-function enableParallax() {
-  hero.addEventListener('mousemove', handleParallax);
-  hero.addEventListener('mouseleave', resetParallax);
-}
+  function applyTransforms() {
+    currentX += (targetX - currentX) * 0.12;
+    currentY += (targetY - currentY) * 0.12;
 
-function disableParallax() {
-  hero.removeEventListener('mousemove', handleParallax);
-  hero.removeEventListener('mouseleave', resetParallax);
-  resetParallax();
-}
+    layers.forEach((layer) => {
+      const depth = Number(layer.dataset.depth || '0');
+      const translateX = currentX * depth;
+      const translateY = currentY * depth;
+      layer.style.transform = `translate3d(${translateX}px, ${translateY}px, 0)`;
+    });
 
-function updateParallaxPreference() {
-  const shouldDisable = reduceMotionQuery.matches || !finePointerQuery.matches;
-  if (shouldDisable) {
-    disableParallax();
-  } else {
-    enableParallax();
+    if (Math.abs(currentX - targetX) > 0.5 || Math.abs(currentY - targetY) > 0.5) {
+      frame = window.requestAnimationFrame(applyTransforms);
+    } else {
+      frame = null;
+    }
   }
+
+  function queueFrame() {
+    if (frame === null) {
+      frame = window.requestAnimationFrame(applyTransforms);
+    }
+  }
+
+  function handlePointerMove(event) {
+    const rect = root.getBoundingClientRect();
+    const offsetX = event.clientX - rect.left;
+    const offsetY = event.clientY - rect.top;
+    const normalizedX = (offsetX / rect.width - 0.5) * 2;
+    const normalizedY = (offsetY / rect.height - 0.5) * 2;
+    targetX = normalizedX * -strength;
+    targetY = normalizedY * -strength;
+    queueFrame();
+  }
+
+  function handlePointerLeave() {
+    targetX = 0;
+    targetY = 0;
+    queueFrame();
+  }
+
+  function enable() {
+    if (isEnabled || !isActive || !motionEnabled) return;
+    root.addEventListener('pointermove', handlePointerMove);
+    root.addEventListener('pointerleave', handlePointerLeave);
+    isEnabled = true;
+  }
+
+  function disable() {
+    if (!isEnabled) return;
+    root.removeEventListener('pointermove', handlePointerMove);
+    root.removeEventListener('pointerleave', handlePointerLeave);
+    isEnabled = false;
+    handlePointerLeave();
+  }
+
+  function setActive(value) {
+    const shouldBeActive = Boolean(value);
+    if (shouldBeActive === isActive) return;
+    isActive = shouldBeActive;
+    if (!isActive) {
+      disable();
+    } else if (motionEnabled) {
+      enable();
+    }
+  }
+
+  function setMotionState(allowMotion) {
+    if (!allowMotion) {
+      disable();
+    } else if (isActive) {
+      enable();
+    }
+  }
+
+  return {
+    enable,
+    disable,
+    setActive,
+    setMotionState,
+    reset: handlePointerLeave,
+  };
 }
+
+const parallaxContexts = [];
+const heroParallax = createParallaxContext(heroScene, { strength: 18, active: true });
+if (heroParallax) {
+  parallaxContexts.push(heroParallax);
+}
+const storyParallax = createParallaxContext(storyScene, { strength: 12, active: false });
+if (storyParallax) {
+  parallaxContexts.push(storyParallax);
+}
+
+function updateMotionPreferences() {
+  motionEnabled = !(reduceMotionQuery.matches || !finePointerQuery.matches);
+  parallaxContexts.forEach((context) => context.setMotionState(motionEnabled));
+}
+
+updateMotionPreferences();
+subscribeToQuery(reduceMotionQuery, updateMotionPreferences);
+subscribeToQuery(finePointerQuery, updateMotionPreferences);
 
 function randomBetween(min, max) {
   return Math.random() * (max - min) + min;
 }
 
 function populateMeteors() {
-  if (!meteorContainer) return;
-
+  if (!heroMeteorContainer) return;
   const meteorTotal = 16;
   const fragment = document.createDocumentFragment();
 
@@ -94,7 +170,7 @@ function populateMeteors() {
     fragment.appendChild(meteor);
   }
 
-  meteorContainer.appendChild(fragment);
+  heroMeteorContainer.appendChild(fragment);
 }
 
 function enhanceTitle() {
@@ -115,7 +191,6 @@ function enhanceTitle() {
     span.style.setProperty('--index', index);
 
     if (char === ' ') {
-      span.classList.add('title-letter--space');
       span.innerHTML = '&nbsp;';
     } else {
       span.textContent = char;
@@ -140,12 +215,12 @@ function enhanceTitle() {
     }
   }
 
-  title.addEventListener('mousemove', (event) => {
+  title.addEventListener('pointermove', (event) => {
     const letter = event.target.closest('.title-letter');
     setActiveLetter(letter);
   });
 
-  title.addEventListener('mouseleave', () => {
+  title.addEventListener('pointerleave', () => {
     setActiveLetter(null);
   });
 
@@ -159,18 +234,104 @@ function enhanceTitle() {
   });
 }
 
-if (hero && layers.length) {
-  updateParallaxPreference();
-  subscribeToQuery(reduceMotionQuery, updateParallaxPreference);
-  subscribeToQuery(finePointerQuery, updateParallaxPreference);
+function revealStoryLines() {
+  if (!storyLines.length) return;
+
+  storyLines.forEach((line) => {
+    line.classList.remove('is-visible');
+    line.style.animation = 'none';
+  });
+
+  // Force reflow so animations can restart
+  void storyLines[0].offsetHeight;
+
+  storyLines.forEach((line) => {
+    line.style.animation = '';
+    line.classList.add('is-visible');
+  });
+}
+
+const BLINK_SWITCH_DELAY = 900;
+let isTransitioning = false;
+
+function enterStoryScene() {
+  if (!storyScene) return;
+
+  storyScene.removeAttribute('hidden');
+  storyScene.setAttribute('aria-hidden', 'false');
+  storyScene.classList.add('is-active');
+  document.body.classList.add('has-entered-story');
+  if (storyParallax) {
+    storyParallax.setActive(true);
+    storyParallax.setMotionState(motionEnabled);
+  }
+  revealStoryLines();
+}
+
+function hideHeroScene() {
+  if (!heroScene) return;
+  heroScene.classList.remove('is-active');
+  heroScene.setAttribute('aria-hidden', 'true');
+  heroScene.setAttribute('hidden', 'hidden');
+  if (heroParallax) {
+    heroParallax.setActive(false);
+  }
+}
+
+function handleExploreClick() {
+  if (isTransitioning) return;
+  isTransitioning = true;
+
+  document.body.classList.add('is-transitioning');
+  if (exploreButton) {
+    exploreButton.classList.add('is-pressed');
+    window.setTimeout(() => exploreButton.classList.remove('is-pressed'), 420);
+  }
+
+  if (blinkOverlay) {
+    blinkOverlay.classList.add('blink-overlay--active');
+  }
+
+  window.setTimeout(() => {
+    hideHeroScene();
+    enterStoryScene();
+  }, BLINK_SWITCH_DELAY);
+
+  if (blinkOverlay) {
+    blinkOverlay.addEventListener(
+      'animationend',
+      () => {
+        blinkOverlay.classList.remove('blink-overlay--active');
+        document.body.classList.remove('is-transitioning');
+        isTransitioning = false;
+      },
+      { once: true }
+    );
+  } else {
+    document.body.classList.remove('is-transitioning');
+    isTransitioning = false;
+  }
+}
+
+function handleReplayClick() {
+  if (replayButton) {
+    replayButton.classList.add('is-pressed');
+    window.setTimeout(() => replayButton.classList.remove('is-pressed'), 320);
+  }
+  revealStoryLines();
+}
+
+if (exploreButton) {
+  exploreButton.addEventListener('click', handleExploreClick);
+}
+
+if (replayButton) {
+  replayButton.addEventListener('click', handleReplayClick);
 }
 
 enhanceTitle();
 populateMeteors();
 
-if (exploreButton) {
-  exploreButton.addEventListener('click', () => {
-    exploreButton.classList.add('clicked');
-    setTimeout(() => exploreButton.classList.remove('clicked'), 450);
-  });
+if (storyScene && !storyScene.hasAttribute('hidden')) {
+  revealStoryLines();
 }

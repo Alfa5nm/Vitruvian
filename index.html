@@ -7,11 +7,19 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <main class="hero" role="main">
-      <div class="space parallax-layer" aria-hidden="true"></div>
-      <div class="stars parallax-layer" aria-hidden="true"></div>
-      <div class="meteors parallax-layer" aria-hidden="true"></div>
-      <div class="nebula parallax-layer" aria-hidden="true"></div>
+    <div class="blink-overlay" aria-hidden="true">
+      <div class="blink-lid blink-lid--top"></div>
+      <div class="blink-lid blink-lid--bottom"></div>
+      <div class="blink-core"></div>
+    </div>
+
+    <main class="scene scene--hero is-active" role="main">
+      <div class="hero-backdrop" aria-hidden="true">
+        <div class="space parallax-layer" data-depth="0.12"></div>
+        <div class="stars parallax-layer" data-depth="0.2"></div>
+        <div class="meteors parallax-layer" data-depth="0.28"></div>
+        <div class="nebula parallax-layer" data-depth="0.22"></div>
+      </div>
       <div class="content" role="presentation">
         <p class="eyebrow" aria-hidden="true">Web-based exploration</p>
         <h1 class="title" tabindex="0" data-title="COSMOSCOPE">COSMOSCOPE</h1>
@@ -19,6 +27,40 @@
         <button class="explore" type="button" aria-label="Launch COSMOSCOPE">Explore</button>
       </div>
     </main>
+
+    <section class="scene scene--story" aria-live="polite" hidden>
+      <div class="story-visuals" aria-hidden="true">
+        <div class="story-layer story-layer--halo" data-depth="0.08"></div>
+        <div class="story-layer story-layer--window" data-depth="0.12"></div>
+        <div class="story-layer story-layer--stars" data-depth="0.18"></div>
+        <div class="story-character story-character--captain" data-depth="0.32" role="presentation"></div>
+        <div class="story-character story-character--navigator" data-depth="0.28" role="presentation"></div>
+      </div>
+      <div class="story-content" role="presentation">
+        <p class="story-eyebrow">Flight Log 43 • 0200 GST</p>
+        <h2 class="story-heading">Docking with the unknown</h2>
+        <div class="story-dialogue" aria-live="assertive">
+          <p class="story-line" style="--line-index: 0">
+            <span class="speaker speaker--captain">Lyra:</span>
+            Systems are stable. The anomaly’s gravity well is guiding us in like a tide.
+          </p>
+          <p class="story-line" style="--line-index: 1">
+            <span class="speaker speaker--navigator">Orion:</span>
+            Crew is steady, captain. Ready to ride the horizon when your signal comes.
+          </p>
+          <p class="story-line" style="--line-index: 2">
+            <span class="speaker speaker--captain">Lyra:</span>
+            Hold formation. COSMOSCOPE charts fresh territory tonight. Keep sensors wide.
+          </p>
+          <p class="story-line" style="--line-index: 3">
+            <span class="speaker speaker--navigator">Orion:</span>
+            Copy that. Crew hearts synced, eyes bright. Let’s chase the shimmer.
+          </p>
+        </div>
+        <button class="story-replay" type="button" aria-label="Replay COSMOSCOPE arrival">Replay arrival</button>
+      </div>
+    </section>
+
     <script src="script.js"></script>
   </body>
 </html>

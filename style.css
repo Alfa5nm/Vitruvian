@@ -1,13 +1,17 @@
 :root {
   color-scheme: dark;
-  --bg-color: #05060f;
-  --bg-gradient: radial-gradient(circle at 30% 20%, rgba(66, 96, 222, 0.2), transparent 55%),
-    radial-gradient(circle at 70% 65%, rgba(98, 235, 255, 0.12), transparent 60%),
-    radial-gradient(circle, rgba(1, 4, 12, 0.92), rgba(0, 0, 0, 0.96));
+  --bg-color: #03040c;
+  --bg-gradient: radial-gradient(circle at 30% 20%, rgba(66, 96, 222, 0.28), transparent 55%),
+    radial-gradient(circle at 70% 65%, rgba(98, 235, 255, 0.16), transparent 60%),
+    radial-gradient(circle, rgba(1, 4, 12, 0.92), rgba(0, 0, 0, 0.95));
   --accent: #4ad9ff;
   --accent-strong: #9f7bff;
-  --text-muted: rgba(235, 240, 255, 0.65);
-  --text-soft: rgba(235, 240, 255, 0.5);
+  --text-muted: rgba(235, 240, 255, 0.62);
+  --text-soft: rgba(235, 240, 255, 0.48);
+  --surface-glass: rgba(6, 10, 26, 0.52);
+  --surface-story: rgba(7, 10, 24, 0.68);
+  --stroke-soft: rgba(255, 255, 255, 0.1);
+  --blink-duration: 2400ms;
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
@@ -23,25 +27,63 @@ body {
   background-image: var(--bg-gradient);
   color: #f8fbff;
   overflow: hidden;
+  line-height: 1.6;
 }
 
-.hero {
+[hidden] {
+  display: none !important;
+}
+
+.scene {
   position: relative;
+  min-height: 100vh;
+  width: 100%;
   display: grid;
   place-items: center;
-  min-height: 100vh;
-  padding: clamp(1.5rem, 6vw, 4rem);
+  padding: clamp(1.5rem, 6vw, 4.5rem);
   overflow: hidden;
   isolation: isolate;
+  transition: opacity 0.8s ease, transform 1s ease;
+}
+
+.scene--hero {
+  opacity: 1;
+}
+
+.scene--hero::after {
+  content: '';
+  position: absolute;
+  inset: -30%;
+  background: radial-gradient(circle at center, rgba(17, 25, 61, 0.1) 0%, rgba(6, 10, 28, 0.9) 55%, rgba(0, 0, 0, 1) 82%);
+  opacity: 0;
+  transform: scale(0.65);
+  transition: transform 1s cubic-bezier(0.19, 1, 0.22, 1), opacity 0.8s ease, filter 0.8s ease;
+  z-index: 1;
+  pointer-events: none;
+}
+
+body.has-entered-story .scene--hero {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.hero-backdrop {
+  position: absolute;
+  inset: -18vh;
+  overflow: hidden;
+  z-index: 0;
+  pointer-events: none;
 }
 
 .parallax-layer {
   position: absolute;
-  inset: -10vh;
+  inset: 0;
   background-repeat: repeat;
   background-size: 200% 200%;
   will-change: transform;
   transition: transform 0.18s ease-out;
+  pointer-events: none;
 }
 
 .space {
@@ -71,9 +113,8 @@ body {
 
 .meteors {
   pointer-events: none;
-  overflow: hidden;
   mix-blend-mode: screen;
-  mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 1), transparent 80%);
+  mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 1), transparent 75%);
 }
 
 .meteor {
@@ -128,12 +169,14 @@ body {
   position: relative;
   text-align: center;
   padding: clamp(2rem, 4vw, 3rem) clamp(2.2rem, 6vw, 4rem);
-  backdrop-filter: blur(16px) saturate(120%);
-  background: rgba(5, 8, 20, 0.48);
+  backdrop-filter: blur(16px) saturate(130%);
+  background: var(--surface-glass);
   max-width: min(90vw, 540px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--stroke-soft);
   border-radius: 1.6rem;
   box-shadow: 0 18px 45px rgba(10, 15, 45, 0.58);
+  z-index: 2;
+  transition: transform 0.6s ease, opacity 0.6s ease;
 }
 
 .eyebrow {
@@ -148,8 +191,8 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: clamp(0.1rem, 0.65vw, 0.65rem);
+  white-space: nowrap;
+  gap: clamp(0.1rem, 0.5vw, 0.5rem);
   font-size: clamp(3rem, 8vw, 5.4rem);
   letter-spacing: 0.4rem;
   text-transform: uppercase;
@@ -186,10 +229,6 @@ body {
   background: radial-gradient(circle, rgba(148, 87, 235, 0.75), transparent 65%);
   opacity: 0;
   transition: opacity 0.3s ease;
-}
-
-.title-letter--space {
-  width: clamp(0.6rem, 1.5vw, 1.6rem);
 }
 
 .title:hover .title-letter,
@@ -242,6 +281,7 @@ body {
   box-shadow: 0 16px 32px rgba(74, 217, 255, 0.32);
   animation: pulse 5s ease-in-out infinite;
   outline: none;
+  z-index: 1;
 }
 
 .explore::after {
@@ -269,7 +309,7 @@ body {
   outline-offset: 4px;
 }
 
-.explore.clicked {
+.explore.is-pressed {
   transform: scale(0.95);
   box-shadow: 0 12px 25px rgba(74, 217, 255, 0.34);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -315,35 +355,436 @@ body {
   }
 }
 
-@media (max-width: 600px) {
-  .hero {
-    padding: 1.5rem;
+/* Blink transition */
+
+.blink-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.blink-overlay--active {
+  opacity: 1;
+  animation: blink-overlay-fade var(--blink-duration) ease-in-out forwards;
+}
+
+@keyframes blink-overlay-fade {
+  0% {
+    background: transparent;
+  }
+  40% {
+    background: rgba(0, 0, 0, 0.65);
+  }
+  55% {
+    background: rgba(0, 0, 0, 0.85);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+.blink-lid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 55%;
+  background: radial-gradient(circle at center, rgba(21, 27, 48, 0.85), rgba(0, 0, 0, 1));
+  transform-origin: center;
+  transform: translateY(var(--offset, -100%));
+  opacity: 0.96;
+}
+
+.blink-lid--top {
+  top: 0;
+  --offset: -100%;
+}
+
+.blink-lid--bottom {
+  bottom: 0;
+  --offset: 100%;
+}
+
+.blink-overlay--active .blink-lid--top {
+  animation: blink-top var(--blink-duration) cubic-bezier(0.66, 0, 0.34, 1) forwards;
+}
+
+.blink-overlay--active .blink-lid--bottom {
+  animation: blink-bottom var(--blink-duration) cubic-bezier(0.66, 0, 0.34, 1) forwards;
+}
+
+@keyframes blink-top {
+  0% {
+    transform: translateY(-100%);
+  }
+  35% {
+    transform: translateY(0%);
+  }
+  60% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes blink-bottom {
+  0% {
+    transform: translateY(100%);
+  }
+  35% {
+    transform: translateY(0%);
+  }
+  60% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.blink-core {
+  position: absolute;
+  inset: 15%;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(43, 73, 132, 0.38), rgba(1, 2, 6, 0.95));
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.blink-overlay--active .blink-core {
+  animation: blink-core-collapse var(--blink-duration) ease-in-out forwards;
+}
+
+@keyframes blink-core-collapse {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(0.2);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(0.18);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+body.is-transitioning .scene--hero::after {
+  opacity: 1;
+  transform: scale(0.08);
+  filter: blur(6px);
+}
+
+body.is-transitioning .scene--hero .content {
+  transform: scale(0.88) translateY(14px);
+  opacity: 0;
+}
+
+body.is-transitioning .scene--hero [data-depth] {
+  filter: brightness(0.3) saturate(0.4);
+}
+
+body.is-transitioning .scene--hero .hero-backdrop {
+  transition: transform 0.95s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transform: scale(0.55);
+}
+
+/* Story scene */
+
+.scene--story {
+  background: linear-gradient(160deg, rgba(3, 6, 18, 0.96), rgba(8, 12, 34, 0.92));
+  opacity: 0;
+  transform: translateY(6vh);
+}
+
+.scene--story.is-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.story-visuals {
+  position: absolute;
+  inset: -12vh;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.story-layer {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  opacity: 0.9;
+  transition: transform 0.2s ease-out;
+  pointer-events: none;
+}
+
+.story-layer--halo {
+  background-image: radial-gradient(circle at 45% 20%, rgba(80, 140, 255, 0.35), transparent 58%),
+    radial-gradient(circle at 65% 60%, rgba(102, 255, 204, 0.24), transparent 65%),
+    radial-gradient(circle at 50% 50%, rgba(18, 28, 66, 0.9), rgba(3, 4, 12, 1));
+  mix-blend-mode: screen;
+}
+
+.story-layer--window {
+  background-image: radial-gradient(circle at center, rgba(12, 18, 42, 0.96), rgba(2, 4, 10, 0.95)),
+    radial-gradient(circle at 20% 30%, rgba(74, 217, 255, 0.18), transparent 55%),
+    radial-gradient(circle at 80% 75%, rgba(159, 123, 255, 0.22), transparent 60%);
+  border-radius: 50%;
+  width: 140vmin;
+  height: 140vmin;
+  margin: auto;
+  filter: saturate(120%);
+  box-shadow: inset 0 0 120px rgba(8, 12, 34, 0.6);
+}
+
+.story-layer--window::before {
+  content: '';
+  position: absolute;
+  inset: -12vmin;
+  border-radius: 50%;
+  border: clamp(36px, 10vmin, 110px) solid rgba(9, 12, 26, 0.92);
+  box-shadow: 0 0 60px rgba(4, 6, 16, 0.8), inset 0 0 30px rgba(41, 60, 132, 0.35);
+  background: radial-gradient(circle at 50% 30%, rgba(74, 217, 255, 0.08), transparent 65%);
+}
+
+.story-layer--stars {
+  background-image: radial-gradient(1px 1px at 35px 60px, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 120px 140px, rgba(255, 255, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 220px 30px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 320px 180px, rgba(255, 255, 255, 0.65), transparent);
+  background-size: 420px 420px;
+  mix-blend-mode: screen;
+  opacity: 0.55;
+}
+
+.story-character {
+  position: absolute;
+  bottom: 8%;
+  width: clamp(180px, 26vw, 280px);
+  aspect-ratio: 3 / 4;
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: drop-shadow(0 24px 40px rgba(4, 8, 20, 0.8));
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.story-character::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.16), transparent 70%);
+  mix-blend-mode: screen;
+  opacity: 0.6;
+}
+
+.story-character::before {
+  content: '';
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  top: 12%;
+  height: 38%;
+  border-radius: 45% 45% 42% 42%;
+  background: radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.85), rgba(108, 140, 188, 0.35) 60%, rgba(24, 30, 56, 0.8));
+  box-shadow: inset 0 -12px 24px rgba(20, 24, 42, 0.65);
+  opacity: 0.88;
+}
+
+.story-character--captain {
+  left: clamp(2rem, 12vw, 6rem);
+  background-image: radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.85), transparent 75%),
+    linear-gradient(140deg, rgba(201, 191, 168, 0.95), rgba(168, 154, 130, 0.92));
+  border-radius: 45% 45% 40% 40% / 55% 55% 45% 45%;
+  clip-path: ellipse(48% 50% at 50% 48%);
+  transform: rotate(-4deg) scale(1.03);
+}
+
+.story-character--navigator {
+  right: clamp(1.5rem, 10vw, 4.5rem);
+  background-image: radial-gradient(circle at 60% 22%, rgba(255, 255, 255, 0.85), transparent 70%),
+    linear-gradient(150deg, rgba(206, 192, 168, 0.96), rgba(172, 160, 138, 0.9));
+  border-radius: 45% 45% 42% 42% / 58% 58% 46% 46%;
+  clip-path: ellipse(48% 52% at 52% 50%);
+  transform: rotate(3deg) scale(0.98);
+}
+
+.story-content {
+  position: relative;
+  max-width: min(90vw, 640px);
+  padding: clamp(2rem, 5vw, 3.25rem);
+  background: var(--surface-story);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.75rem;
+  box-shadow: 0 30px 80px rgba(2, 5, 14, 0.75);
+  backdrop-filter: blur(18px) saturate(140%);
+  z-index: 2;
+}
+
+.story-eyebrow {
+  font-size: 0.85rem;
+  letter-spacing: 0.45rem;
+  text-transform: uppercase;
+  color: rgba(210, 226, 255, 0.6);
+  margin-bottom: 1.5rem;
+}
+
+.story-heading {
+  font-size: clamp(1.75rem, 4vw, 2.6rem);
+  letter-spacing: 0.12rem;
+  text-transform: uppercase;
+  color: #f3f6ff;
+  margin-bottom: 1.75rem;
+}
+
+.story-dialogue {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+}
+
+.story-line {
+  position: relative;
+  padding-left: 1.5rem;
+  color: rgba(232, 236, 255, 0.86);
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.story-line::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.65em;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  opacity: 0.8;
+}
+
+.story-line.is-visible {
+  animation: story-line-in 0.9s ease forwards;
+  animation-delay: calc(0.35s + var(--line-index) * 0.55s);
+}
+
+@keyframes story-line-in {
+  0% {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.speaker {
+  font-weight: 600;
+  letter-spacing: 0.18rem;
+  text-transform: uppercase;
+  margin-right: 0.75rem;
+  color: var(--accent);
+}
+
+.speaker--navigator {
+  color: var(--accent-strong);
+}
+
+.story-replay {
+  align-self: start;
+  padding: 0.75rem 2.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(135deg, rgba(74, 217, 255, 0.2), rgba(159, 123, 255, 0.2));
+  color: #f4f7ff;
+  letter-spacing: 0.32rem;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 12px 25px rgba(6, 10, 28, 0.45);
+}
+
+.story-replay:hover,
+.story-replay:focus-visible {
+  background: linear-gradient(135deg, rgba(74, 217, 255, 0.45), rgba(159, 123, 255, 0.45));
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(6, 10, 28, 0.58);
+}
+
+.story-replay.is-pressed {
+  transform: scale(0.96);
+  box-shadow: 0 10px 18px rgba(6, 10, 28, 0.45);
+}
+
+.story-replay:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 4px;
+}
+
+/* Responsive tweaks */
+
+@media (max-width: 900px) {
+  .scene {
+    padding: clamp(1.2rem, 4vw, 3rem);
   }
 
-  .content {
-    padding: 1.75rem 1.5rem;
+  .story-character {
+    width: clamp(140px, 32vw, 220px);
+    bottom: 4%;
   }
 
+  .story-content {
+    padding: clamp(1.75rem, 6vw, 2.75rem);
+  }
+}
+
+@media (max-width: 640px) {
   .title {
-    letter-spacing: 0.25rem;
+    letter-spacing: 0.22rem;
+    font-size: clamp(2.5rem, 12vw, 4rem);
   }
 
   .tagline {
     letter-spacing: 0.18rem;
   }
+
+  .story-eyebrow {
+    letter-spacing: 0.35rem;
+  }
+
+  .story-heading {
+    letter-spacing: 0.08rem;
+  }
+
+  .story-line {
+    padding-left: 1.15rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .parallax-layer,
-  .explore,
-  .explore::before,
-  .explore::after,
-  .meteor {
-    animation: none !important;
-    transition-duration: 0s !important;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 
-  .parallax-layer {
+  .parallax-layer,
+  .story-layer,
+  .story-character {
     transform: none !important;
   }
 }
